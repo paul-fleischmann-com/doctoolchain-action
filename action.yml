@@ -12,7 +12,11 @@ inputs:
     default: build/docs
 
   tasks:
-    description: Space-separated docToolchain tasks to run
+    description: >
+      Space-separated docToolchain tasks to run.
+      Available tasks: generateHTML, generatePDF, generateDocBook, generateDeck,
+      generateSite, exportDrawings, publishToConfluence, htmlSanityCheck, checkLinks.
+      Run './dtcw tasks --group doctoolchain' for the full list.
     required: false
     default: generateHTML generatePDF
 
