@@ -3,7 +3,8 @@ inputPath = 'docs'
 outputPath = System.getenv('DTC_OUTPUT_PATH') ?: 'build/docs'
 
 inputFiles = [
-  [file: 'user-guide/index.adoc', formats: ['html', 'pdf']],
+  [file: 'user-guide/pdf.adoc', formats: ['pdf']],
+  [file: 'user-guide/index.adoc', formats: ['html']],
 ]
 
 asciidoc = [
