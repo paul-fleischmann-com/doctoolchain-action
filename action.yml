@@ -1,5 +1,5 @@
 name: docToolchain
-description: Build AsciiDoc documentation via docToolchain (dtcw docker). No local Java/Gradle install required.
+description: Build AsciiDoc documentation via docToolchain using dtcw (docker backend)
 
 branding:
   icon: book
@@ -12,7 +12,7 @@ inputs:
     default: build/docs
 
   tasks:
-    description: Space-separated docToolchain tasks (e.g. "generateHTML generatePDF")
+    description: docToolchain tasks (e.g. "generateHTML generatePDF")
     required: false
     default: generateHTML
 
@@ -25,22 +25,45 @@ runs:
   using: composite
   steps:
 
-    - name: Validate workspace
+    - name: Checkout safety check
+      uses: actions/checkout@v4
+
+    - name: Ensure dtcw exists (controlled bootstrap)
       shell: bash
       run: |
         set -e
 
-        echo "PWD: $(pwd)"
-        echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
+        echo "Checking dtcw..."
 
-        if [ ! -f "${{ inputs.config-file }}" ]; then
-          echo "ERROR: config-file not found: ${{ inputs.config-file }}"
-          echo "Current tree:"
-          ls -R
-          exit 1
+        if [ ! -f "./dtcw" ]; then
+          echo "dtcw missing → downloading stable version"
+          curl -fsSL https://doctoolchain.org/dtcw -o ./dtcw
+          chmod +x ./dtcw
         fi
 
-    - name: Run docToolchain via dtcw (docker mode)
+        echo "dtcw ready: $(ls -l ./dtcw)"
+
+    - name: Validate config
+      shell: bash
+      run: |
+        set -e
+
+        echo "Workspace: $(pwd)"
+        echo "Listing docs:"
+        ls -R
+
+        if [ ! -f "${{ inputs.config-file }}" ]; then
+          echo "ERROR: config file not found: ${{ inputs.config-file }}"
+          exit 1
+        fi
+      - name: Debug
+        shell: bash
+        run: |
+          pwd
+          ls -R
+          find . -name dtcw
+          find . -name index.adoc
+    - name: Run docToolchain (dtcw docker backend)
       shell: bash
       env:
         DTC_OUTPUT_PATH: ${{ inputs.output-path }}
@@ -48,25 +71,11 @@ runs:
       run: |
         set -euo pipefail
 
-        export WORKSPACE="$GITHUB_WORKSPACE"
-
-        echo "Using workspace: $WORKSPACE"
-        echo "Config: $DTC_CONFIG_FILE"
+        echo "Running docToolchain..."
         echo "Output: $DTC_OUTPUT_PATH"
+        echo "Config: $DTC_CONFIG_FILE"
         echo "Tasks: ${{ inputs.tasks }}"
 
-        # ALWAYS run from repo root
-        cd "$WORKSPACE"
-
-        # ensure dtcw exists
-        if [ ! -f "./dtcw" ]; then
-          echo "ERROR: dtcw not found in repo root"
-          exit 1
-        fi
-
-        chmod +x ./dtcw
-
-        # deterministic execution
         ./dtcw docker \
           -e DTC_OUTPUT_PATH="$DTC_OUTPUT_PATH" \
           -e DTC_CONFIG_FILE="$DTC_CONFIG_FILE" \
