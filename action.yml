@@ -57,12 +57,12 @@ runs:
           exit 1
         fi
     - name: Debug
-        shell: bash
-        run: |
-          pwd
-          ls -R
-          find . -name dtcw
-          find . -name index.adoc
+      shell: bash
+      run: |
+        pwd
+        ls -R
+        find . -name dtcw
+        find . -name index.adoc
     - name: Run docToolchain (dtcw docker backend)
       shell: bash
       env:
