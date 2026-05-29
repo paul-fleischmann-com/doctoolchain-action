@@ -22,7 +22,6 @@ jobs:
       - name: Run doctoolchain-action
         uses: ./
         with:
-          dtcw-path: "./dtcw"
           config-file: "docToolchainConfig.groovy"
           output-path: "build/docs"
       - run: ls -R build/docs
