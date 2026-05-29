@@ -1,4 +1,4 @@
-name: CI test doctoolchain-action
+name: doctoolchain-ci
 
 on:
   workflow_dispatch:
@@ -6,22 +6,21 @@ on:
   pull_request:
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
-      - name: Debug filesystem
+
+      - name: Debug workspace
         run: |
           pwd
-          ls -la
           ls -R
-      - name: Run doctoolchain-action (local path)
+
+      - name: Run doctoolchain-action
         uses: ./
         with:
-          # hier deine echten Inputs aus action.yml eintragen
-          # output-path: ""
-          # tasks: ""
-          config-file: "project/docToolchainConfig.groovy"
-          # dtcw-path: ""
+          dtcw-path: "./dtcw"
+          config-file: "docToolchainConfig.groovy"
+          output-path: "build/docs"
