@@ -13,10 +13,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Debug workspace
+      - name: Debug workspace (safe)
         run: |
-          pwd
-          ls -R
+          echo "PWD: $(pwd)"
+          ls -R docs || true
+          find . -name index.adoc || true
 
       - name: Run doctoolchain-action
         uses: ./
@@ -24,3 +25,8 @@ jobs:
           dtcw-path: "./dtcw"
           config-file: "docToolchainConfig.groovy"
           output-path: "build/docs"
+      - name: Upload docs
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctoolchain-docs
+          path: build/docs
