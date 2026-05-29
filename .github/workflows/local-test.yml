@@ -12,18 +12,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - run: pwd
-      - run: ls -la
       - name: Debug filesystem
         run: |
           pwd
+          ls -la
           ls -R
-          find / -name docToolchainConfig.groovy 2>/dev/null || true
       - name: Run doctoolchain-action (local path)
         uses: ./
-        #with:
+        with:
           # hier deine echten Inputs aus action.yml eintragen
           # output-path: ""
           # tasks: ""
-          # config-file: ""
+          config-file: "project/docToolchainConfig.groovy"
           # dtcw-path: ""
