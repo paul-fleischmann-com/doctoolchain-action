@@ -71,12 +71,9 @@ runs:
       run: |
         set -euo pipefail
 
-        echo "Running docToolchain..."
+        echo "Running docToolchain via dtcw"
         echo "Output: $DTC_OUTPUT_PATH"
         echo "Config: $DTC_CONFIG_FILE"
         echo "Tasks: ${{ inputs.tasks }}"
 
-        ./dtcw docker \
-          -e DTC_OUTPUT_PATH="$DTC_OUTPUT_PATH" \
-          -e DTC_CONFIG_FILE="$DTC_CONFIG_FILE" \
-          ${{ inputs.tasks }}
+        ./dtcw docker ${{ inputs.tasks }}
