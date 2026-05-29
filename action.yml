@@ -1,0 +1,43 @@
+name: docToolchain
+description: Build AsciiDoc documentation via docToolchain Docker image. No local Java/Gradle install required.
+branding:
+  icon: book
+  color: blue
+
+inputs:
+  output-path:
+    description: Output directory for generated docs (DTC_OUTPUT_PATH)
+    required: false
+    default: build/docs
+  tasks:
+    description: Space-separated docToolchain tasks to run (e.g. "generateHTML generatePDF")
+    required: false
+    default: generateHTML
+  config-file:
+    description: Path to docToolchainConfig.groovy relative to repo root
+    required: false
+    default: docToolchainConfig.groovy
+  dtcw-path:
+    description: Path to dtcw wrapper script. Downloaded automatically if not present.
+    required: false
+    default: ./dtcw
+
+runs:
+  using: composite
+  steps:
+    - name: Download dtcw if not present
+      shell: bash
+      run: |
+        DTCW="${{ inputs.dtcw-path }}"
+        if [ ! -f "$DTCW" ]; then
+          echo "dtcw not found at $DTCW — downloading from doctoolchain.org"
+          curl -Lo "$DTCW" https://doctoolchain.org/dtcw
+        fi
+        chmod +x "$DTCW"
+
+    - name: Run docToolchain via Docker
+      shell: bash
+      env:
+        DTC_OUTPUT_PATH: ${{ inputs.output-path }}
+        DTC_CONFIG_FILE: ${{ inputs.config-file }}
+      run: ${{ inputs.dtcw-path }} docker ${{ inputs.tasks }}
