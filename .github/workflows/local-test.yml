@@ -24,7 +24,7 @@ jobs:
         with:
           config-file: "docToolchainConfig.groovy"
           output-path: "build/docs"
-          tasks: "generateHTML generatePDF"
+
       - run: ls -R build/docs
       - name: Upload docs
         uses: actions/upload-artifact@v4

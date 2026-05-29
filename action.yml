@@ -12,9 +12,9 @@ inputs:
     default: build/docs
 
   tasks:
-    description: docToolchain tasks (e.g. "generateHTML generatePDF")
+    description: Space-separated docToolchain tasks to run
     required: false
-    default: generateHTML
+    default: generateHTML generatePDF
 
   config-file:
     description: Path to docToolchainConfig.groovy relative to repo root
