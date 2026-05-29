@@ -1,9 +1,16 @@
-outputPath = System.getenv('DTC_OUTPUT_PATH') ?: 'build/docs'
-
 inputPath = 'docs'
 
+outputPath = System.getenv('DTC_OUTPUT_PATH') ?: 'build/docs'
+
 inputFiles = [
-    [file: 'user-guide/index.adoc', formats: ['html', 'pdf']],
+  [file: 'index.adoc', formats: ['html']],
+  [file: 'master-pdf.adoc', formats: ['pdf']],
 ]
 
-imageDirs = ["${inputPath}/images"]
+asciidoc = [
+  attributes: [
+    'outfilesuffix': '.html',
+    'toc': 'left',
+    'sectlinks': true
+  ]
+]
