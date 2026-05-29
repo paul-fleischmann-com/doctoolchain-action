@@ -25,6 +25,7 @@ jobs:
           dtcw-path: "./dtcw"
           config-file: "docToolchainConfig.groovy"
           output-path: "build/docs"
+      - run: ls -R build/docs
       - name: Upload docs
         uses: actions/upload-artifact@v4
         with:
