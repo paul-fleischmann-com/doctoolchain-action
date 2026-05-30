@@ -25,6 +25,21 @@ inputs:
     required: false
     default: docToolchainConfig.groovy
 
+  dtcw-version:
+    description: >
+      docToolchain version to download dtcw for (e.g. "3.5.0").
+      Leave empty to download the latest dtcw from doctoolchain.org.
+      Ignored if dtcw already exists in the repository root.
+    required: false
+    default: ''
+
+  fail-on-warning:
+    description: >
+      Fail the build if Asciidoctor emits SEVERE warnings (e.g. unresolved includes).
+      Set to 'true' to enable.
+    required: false
+    default: 'false'
+
 runs:
   using: composite
   steps:
@@ -34,8 +49,15 @@ runs:
       run: |
         set -e
         if [ ! -f "./dtcw" ]; then
-          echo "dtcw not found — downloading"
-          curl -fsSL https://doctoolchain.org/dtcw -o ./dtcw
+          if [ -n "${{ inputs.dtcw-version }}" ]; then
+            echo "dtcw not found — downloading version ${{ inputs.dtcw-version }}"
+            curl -fsSL \
+              "https://github.com/docToolchain/docToolchain/releases/download/v${{ inputs.dtcw-version }}/dtcw" \
+              -o ./dtcw
+          else
+            echo "dtcw not found — downloading latest"
+            curl -fsSL https://doctoolchain.org/dtcw -o ./dtcw
+          fi
           chmod +x ./dtcw
         fi
 
@@ -48,6 +70,33 @@ runs:
           exit 1
         fi
 
+    - name: Resolve docToolchain Docker image version
+      id: dtc-version
+      shell: bash
+      run: |
+        DTC_VERSION=$(grep -oP '(?<=DTC_VERSION:=)[0-9.]+' ./dtcw || echo "latest")
+        echo "version=${DTC_VERSION}" >> "$GITHUB_OUTPUT"
+        echo "image=doctoolchain/doctoolchain:v${DTC_VERSION}" >> "$GITHUB_OUTPUT"
+
+    - name: Cache docToolchain Docker image
+      id: docker-cache
+      uses: actions/cache@v4
+      with:
+        path: /tmp/doctoolchain-image.tar
+        key: doctoolchain-image-v${{ steps.dtc-version.outputs.version }}
+
+    - name: Load cached Docker image
+      if: steps.docker-cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: docker load < /tmp/doctoolchain-image.tar
+
+    - name: Pull and save Docker image
+      if: steps.docker-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        docker pull ${{ steps.dtc-version.outputs.image }}
+        docker save ${{ steps.dtc-version.outputs.image }} > /tmp/doctoolchain-image.tar
+
     - name: Run docToolchain (dtcw docker backend)
       shell: bash
       env:
@@ -57,4 +106,53 @@ runs:
         # DTC_OUTPUT_PATH must be forwarded via -e into the Docker container;
         # dtcw does not pass it automatically (only DTC_HEADLESS/DTC_SITETHEME/DTC_PROJECT_BRANCH).
         # DTC_CONFIG_FILE is handled by dtcw on the host (→ -PmainConfigFile in DTC_OPTS).
-        ./dtcw docker extra_arguments "-e DTC_OUTPUT_PATH=${{ inputs.output-path }}" ${{ inputs.tasks }}
+        ./dtcw docker extra_arguments "-e DTC_OUTPUT_PATH=${{ inputs.output-path }}" \
+          ${{ inputs.tasks }} 2>&1 | tee /tmp/dtcw-output.log
+        # tee preserves the exit code of dtcw via pipefail
+
+    - name: Check for SEVERE warnings
+      if: inputs.fail-on-warning == 'true'
+      shell: bash
+      run: |
+        if grep -q "^SEVERE:" /tmp/dtcw-output.log 2>/dev/null; then
+          echo "::error::Asciidoctor SEVERE warnings detected:"
+          grep "^SEVERE:" /tmp/dtcw-output.log | while IFS= read -r line; do
+            echo "::error::$line"
+          done
+          exit 1
+        fi
+
+    - name: Write step summary
+      if: always()
+      shell: bash
+      run: |
+        echo "## docToolchain Build" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+
+        # Generated files table
+        if [ -d "${{ inputs.output-path }}" ]; then
+          FILES=$(find "${{ inputs.output-path }}" -type f \( -name "*.html" -o -name "*.pdf" \) | sort)
+          if [ -n "$FILES" ]; then
+            echo "| File | Size |" >> "$GITHUB_STEP_SUMMARY"
+            echo "|------|------|" >> "$GITHUB_STEP_SUMMARY"
+            echo "$FILES" | while IFS= read -r f; do
+              size=$(du -sh "$f" 2>/dev/null | cut -f1)
+              echo "| \`$f\` | $size |" >> "$GITHUB_STEP_SUMMARY"
+            done
+          else
+            echo "_No HTML or PDF files generated._" >> "$GITHUB_STEP_SUMMARY"
+          fi
+        else
+          echo "_Output directory \`${{ inputs.output-path }}\` not found._" >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+        # SEVERE warning count
+        if [ -f /tmp/dtcw-output.log ]; then
+          SEVERE_COUNT=$(grep -c "^SEVERE:" /tmp/dtcw-output.log 2>/dev/null || true)
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$SEVERE_COUNT" -gt 0 ]; then
+            echo ":warning: **$SEVERE_COUNT SEVERE warning(s)** — check the build log." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo ":white_check_mark: No SEVERE warnings." >> "$GITHUB_STEP_SUMMARY"
+          fi
+        fi
