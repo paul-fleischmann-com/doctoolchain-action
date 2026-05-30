@@ -1,4 +1,4 @@
-= Workflow Guide
+== Workflow Guide
 :toc: left
 :toc-title: Contents
 :icons: font

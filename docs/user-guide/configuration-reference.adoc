@@ -1,4 +1,4 @@
-= Configuration Reference (.req42.yaml)
+== Configuration Reference (.req42.yaml)
 :toc: left
 :toc-title: Contents
 :icons: font

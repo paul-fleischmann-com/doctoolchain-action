@@ -1,5 +1,4 @@
 = req42-tracer Docs
-:doctype: book
 :toc:
 
 == User Guide
