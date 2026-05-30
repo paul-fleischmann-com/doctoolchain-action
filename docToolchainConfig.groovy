@@ -11,6 +11,7 @@ asciidoc = [
   attributes: [
     'outfilesuffix': '.html',
     'toc': 'left',
-    'sectlinks': true
+    'sectlinks': true,
+    'doctype': 'book'
   ]
 ]
