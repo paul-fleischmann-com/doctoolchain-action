@@ -1,4 +1,4 @@
-= AsciiDoc Block Attribute Reference
+== AsciiDoc Block Attribute Reference
 :toc: left
 :toc-title: Contents
 :icons: font

@@ -1,4 +1,4 @@
-= Getting Started with req42-tracer
+== Getting Started with req42-tracer
 :toc: left
 :toc-title: Contents
 :icons: font
